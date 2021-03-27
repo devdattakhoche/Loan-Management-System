@@ -214,6 +214,54 @@ def reject_loan(loggedInUser,loan_id):
 
 # @app.route("/delete_user/<user_id>", methods=["GET"])
 # @token_required
+
+
+@app.route("/filte-by-create-date", methods=["GET"])
+def filter_by_Creationdate():
+    start = request.args.get('start_date', '1985-01-17')
+    end = request.args.get('end_date', '2025-09-17')
+    qry = Loan.query.filter(Loan.create_timestamp.between(start, end))
+    
+    response = {'Loans between' +start+' and '+end:[]}
+    for i in qry : 
+       response['Loans between '+start+' and '+end].append({
+           "id":i.id,
+           "Loan amount":i.loan_amount,
+           "Duration":i.duration,
+           "Loan Type":get_key(i.loan_type,LOAN_TYPES),
+           "State":i.state,
+           "Rate of Interest":i.roi,
+           "Total Payable amount":i.total_payable_amount,
+           "EMI":i.emi,
+           "Created At" : i.create_timestamp
+       })
+
+    if(len(response['Loans between '+start+' and '+end])==0 ) :  return jsonify({"Message":"No records found for the give range!"})
+    return jsonify(response)
+
+@app.route("/filte-by-update-date", methods=["GET"])
+def filter_by_Modificationdate():
+    start = request.args.get('start_date', '1985-01-17')
+    end = request.args.get('end_date', '2025-09-17')
+    qry = Loan.query.filter(Loan.update_timestamp.between(start, end))
+    
+    response = {'Loans between '+start+' and '+end:[]}
+    for i in qry :
+       response['Loans between '+start+' and '+end].append({
+           "id":i.id,
+           "Loan amount":i.loan_amount,
+           "Duration":i.duration,
+           "Loan Type":get_key(i.loan_type,LOAN_TYPES),
+           "State":i.state,
+           "Rate of Interest":i.roi,
+           "Total Payable amount":i.total_payable_amount,
+           "EMI":i.emi,
+           "Created At" : i.create_timestamp
+       })
+
+    if(len(response['Loans between '+start+' and '+end])==0 ) :  return jsonify({"Message":"No records found for the give range!"})
+    return jsonify(response)
+
 '''
 Agent routes
 
@@ -353,19 +401,33 @@ def edit_loan(loggedInUser,loan_id):
     Loans = Loan.query.filter_by(id=loan_id).first()
     if(loggedInUser.id != Loans.customer_id):
         return jsonify({"Message":"The Loan can only be modified by the particular customer who applied it."}),401
-    if(LOAN_STATUS[Loans.state]=="Approved"):
+
+    if(get_key(Loans.state,LOAN_STATUS)=="Approved"):
         return jsonify({"Message":"This Loan has already been approved by the admin!! It is not mutable now"}),401
     previous_loan =  Loan_update_history(Loans.loan_amount,Loans.duration,Loans.id,state=Loans.state,loan_type=Loans.loan_type)
     db.session.add(previous_loan)
     db.session.commit()
     if(data == None) : 
         return jsonify({'message' : 'loan appllication data should be passed for loan'}), 401
-
-    Loans.loan_amount = data["loan_amount"]
-    Loans.loan_amount = data["duration"]
-    Loans.loan_type = LOAN_TYPES[data["loan_type"]]
-    Loans.last_updated_by = loggedInUser.id
-    Loans.update_timestamp = datetime.datetime.now(datetime.timezone.utc)
+    try : 
+        Loans.loan_amount = data["loan_amount"]
+        Loans.last_updated_by = loggedInUser.id
+        Loans.update_timestamp = datetime.datetime.now(datetime.timezone.utc)
+    except KeyError:
+        pass
+    try : 
+        Loans.loan_type = LOAN_TYPES[data["loan_type"]]
+        Loans.last_updated_by = loggedInUser.id
+        Loans.update_timestamp = datetime.datetime.now(datetime.timezone.utc)
+    except KeyError:
+        pass
+    try : 
+        Loans.duration = data["duration"]
+        Loans.last_updated_by = loggedInUser.id
+        Loans.update_timestamp = datetime.datetime.now(datetime.timezone.utc)
+    except KeyError:
+        pass
+   
     db.session.commit()
 
     return jsonify({'Message' : 'Your Loan Application has been successfully Modified',"data":
@@ -379,6 +441,28 @@ def edit_loan(loggedInUser,loan_id):
             "Created on ": Loans.create_timestamp
        }
     })
+
+
+@app.route("/view_loan_history/<loan_id>", methods=["GET"])
+@token_required
+def loan_history(loggedInUser,loan_id):
+    check_customer = Loan.query.filter_by(id = loan_id).first()
+    if loggedInUser.user_type == USERTYPE["Customers"] and loggedInUser.id != check_customer.customer_id : return  jsonify({"Message":"You are not authorised to see Loan objects except yours!"})
+    query = Loan_update_history.query.filter_by(original_loan_id = loan_id).order_by(Loan_update_history.create_timestamp)
+    response = {'History':[]}
+    for i in query : 
+       response['History'].append({
+           "id":i.id,
+           "Loan amount":i.loan_amount,
+           "Duration":i.duration,
+           "Loan Type":get_key(i.loan_type,LOAN_TYPES),
+           "State At this point":i.state,
+           "Origina Loan ID":i.original_loan_id,
+           "Created At" : i.create_timestamp
+       })
+    if(len(response['History'])==0) : return jsonify({"Message":"No changes have been done on this loan object!"})
+    return jsonify(response)
+
 
 
 
