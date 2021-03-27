@@ -1,4 +1,4 @@
-from logging import NullHandler
+from pytz import timezone
 from werkzeug.security import generate_password_hash
 import datetime
 import uuid
@@ -34,6 +34,29 @@ ROI = {
 }
 
 
+class Loan_update_history(db.Model):
+    """ Loan update model """
+    __tablename__ = "Loan_update_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    original_loan_id = db.Column(db.Integer, db.ForeignKey("Loans.id"))
+    loan_type = db.Column(db.Integer,  nullable=False)
+    loan_amount = db.Column(db.Float,  nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
+    state = db.Column(db.Integer, nullable=False)
+    create_timestamp = db.Column(db.DateTime, nullable=False)
+    
+
+    def __init__(self, loan_amount, duration,loan_id, state=LOAN_STATUS['New'], loan_type=LOAN_TYPES['Home_loan'] ):
+        self.loan_type = loan_type
+        self.loan_amount = loan_amount
+        self.duration = duration
+        self.original_loan_id = loan_id
+        self.state = state
+        self.create_timestamp = datetime.datetime.now(datetime.timezone.utc)
+        
+
+
 class Loan(db.Model):
     """ Loan model """
     __tablename__ = "Loans"
@@ -60,12 +83,12 @@ class Loan(db.Model):
         self.duration = duration
         self.state = state
         self.emi = loan_amount * (ROI[loan_type]/(12*100)) * ((1+(ROI[loan_type]/(12*100)))**duration)/((1+(ROI[loan_type]/(12*100)))**duration - 1)
-        self.total_payable_amount = (loan_amount * ROI[loan_type] * ((1+ROI[loan_type])**duration)/((1+ROI[loan_type])**duration - 1)) * duration
+        self.total_payable_amount = loan_amount + (loan_amount*ROI[loan_type]/(12*100)*duration)
         self.customer_id = customer_id
         self.last_updated_by = customer_id
         self.agent_id = (-1)
-        self.create_timestamp = datetime.datetime.utcnow().date()
-        self.update_timestamp = datetime.datetime.utcnow().date()
+        self.create_timestamp = datetime.datetime.now(datetime.timezone.utc)
+        self.update_timestamp = datetime.datetime.now(datetime.timezone.utc)
 
 
     
@@ -100,7 +123,7 @@ class Users(db.Model):
         self.phone = phone
         self.password_hash = generate_password_hash(password,method='pbkdf2:sha256')
         self.user_type = user_type 
-        self.timestamp = datetime.datetime.utcnow().date()
+        self.timestamp = datetime.datetime.now(datetime.timezone.utc)
         self.approved = approved
 
 

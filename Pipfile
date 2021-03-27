@@ -12,6 +12,7 @@ flask-script = "*"
 psycopg2-binary = "*"
 flask-bcrypt = "*"
 pyjwt = "*"
+pytz = "*"
 
 [dev-packages]
 

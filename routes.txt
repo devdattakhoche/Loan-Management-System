@@ -1,0 +1,24 @@
+/login
+
+Admin Routes
+
+/all_users
+/all_agents
+/all_Agent_applications
+/Agent_loan_requests/<agent_id>
+/approve_agent/<agent_id>
+/approve_loan/<loan_id>
+
+/reject_loan/<loan_id>
+Agent 
+
+/register_Agent
+/all_Customers
+/get_loans_State_filter
+/request_loan/<loan_id>
+/loan_Requests_by_agent
+
+Customer 
+
+/register_Customer
+/new_loan

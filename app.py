@@ -15,15 +15,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
-from models import LOAN_STATUS, LOAN_TYPES, Loan, USERTYPE, Users
+from models import LOAN_STATUS, LOAN_TYPES, Loan, Loan_update_history, USERTYPE, Users
 
 
 add_admin = True
 
 if(add_admin):
     new_user =  Users("Admin","admin@gmail.com","9829829829","adminpass",user_type=USERTYPE['Admin'])
-    db.session.add(new_user)
-    db.session.commit()
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+    except:
+        pass
     add_admin=False
 
 def get_key(val,dict):
@@ -45,12 +48,12 @@ def token_required(f):
         
         try: 
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
-            current_user = Users.query.filter_by(public_id=data['public_id']).first()
+            loggedInUser = Users.query.filter_by(public_id=data['public_id']).first()
         except Exception as ex:
             print(ex.__class__.__name__)
             return jsonify({'message' : 'Token is invalid!'}), 401
 
-        return f(current_user, *args, **kwargs)
+        return f(loggedInUser, *args, **kwargs)
 
     return decorated
 
@@ -73,6 +76,7 @@ def login():
     if check_password_hash(user.password_hash, auth.password):
         if(user.user_type == USERTYPE['Agent']):
             if(user.approved == False):
+                    print(user.id)
                     return make_response('Your Application for agent is not approved by the admin.', 401,{'WWW-Authenticate' : 'Basic realm="Login Required!"'}) 
         token = jwt.encode({'public_id':user.public_id,'exp':datetime.datetime.utcnow() + datetime.timedelta(minutes=30)} , app.config['SECRET_KEY'])
         return jsonify({"token" : token})
@@ -87,13 +91,13 @@ Admin Routes
 
 @app.route("/all_users", methods=["GET"])
 @token_required
-def get_all_user(current_user):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+def get_all_user(loggedInUser):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
     users = Users.query.all()
     response  = {}
     for i in users:
-        if(current_user.id == i.id) : continue
+        if(loggedInUser.id == i.id) : continue
         response[i.id] = {
             "username" : i.username,
             "password" : i.password_hash,
@@ -108,13 +112,13 @@ def get_all_user(current_user):
 
 @app.route("/all_agents", methods=["GET"])
 @token_required
-def get_all_agents(current_user):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+def get_all_agents(loggedInUser):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
     all_agents = Users.query.filter_by(user_type=USERTYPE['Agent'])
     response  = {}
     for i in all_agents:
-        if(current_user.approved == False) : continue
+        if(loggedInUser.approved == False) : continue
         response[i.id] = {
             "username" : i.username,
             "password" : i.password_hash,
@@ -128,13 +132,14 @@ def get_all_agents(current_user):
 
 
 @app.route("/all_Agent_applications", methods=["GET"])
-def get_agents_requests(current_user):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+@token_required
+def get_agents_requests(loggedInUser):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
     all_agents = Users.query.filter_by(user_type=USERTYPE['Agent'])
     response  = {}
     for i in all_agents:
-        if(current_user.approved == True) : continue
+        if(i.approved == True) : continue
         response[i.id] = {
             "username" : i.username,
             "password" : i.password_hash,
@@ -143,15 +148,15 @@ def get_agents_requests(current_user):
             "phone" : i.phone,
             "Created On" : i.timestamp
         }
-    if len(response) == 0 : return jsonify({"Message":"No agents in the system!"})
+    if len(response) == 0 : return jsonify({"Message":"No pending agent applications  in the system!"})
     return jsonify(response)
 
 
 
 @app.route("/Agent_loan_requests/<agent_id>", methods=["GET"])
 @token_required
-def approve_agent(current_user,agent_id):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+def approve_agent_loan(loggedInUser,agent_id):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
     Loans = Loan.query.filter_by(agent_id=agent_id)
     response  = {}
@@ -172,25 +177,25 @@ def approve_agent(current_user,agent_id):
     if len(response) == 0 : return jsonify({"Message":"No request for Loans from this particular agent found found !"})
     return jsonify(response)   
     
-    return jsonify({"Message":"The agent has been successfully approved!!"})
 
 
 @app.route("/approve_agent/<agent_id>", methods=["GET"])
 @token_required
-def approve_agent(current_user,agent_id):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+def approve_agent(loggedInUser,agent_id):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
-    agent = Users.query.filter_by(id=agent_id)
+    agent = Users.query.filter_by(id=agent_id).first()
+    if(agent.approved==True) : return jsonify({"Message":"The agent has already been approved by the admin!"})
     agent.approved = True
     db.session.commit()
     return jsonify({"Message":"The agent has been successfully approved!!"})
 
 @app.route("/approve_loan/<loan_id>", methods=["GET"])
 @token_required
-def approve_loan(current_user,loan_id):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+def approve_loan(loggedInUser,loan_id):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
-    loan = Loan.query.filter_by(id=loan_id)
+    loan = Loan.query.filter_by(id=loan_id).first()
     loan.state = LOAN_STATUS['Approved']
     db.session.commit()
     return jsonify({"Message":"The Loan has been successfully approved!!"})
@@ -198,8 +203,8 @@ def approve_loan(current_user,loan_id):
 
 @app.route("/reject_loan/<loan_id>", methods=["GET"])
 @token_required
-def reject_loan(current_user,loan_id):
-    if current_user.user_type==USERTYPE['Agent'] and current_user.user_type==USERTYPE['Customers'] : 
+def reject_loan(loggedInUser,loan_id):
+    if loggedInUser.user_type==USERTYPE['Agent'] or loggedInUser.user_type==USERTYPE['Customers'] : 
         return jsonify({"Message":"You are not authorized to open this page"}) 
     loan = Loan.query.filter_by(id=loan_id)
     loan.state = LOAN_STATUS['Rejected']
@@ -230,8 +235,8 @@ def register_Agent():
 
 @app.route("/all_Customers", methods=["GET"])
 @token_required
-def get_all_Customers(current_user):
-    if current_user.user_type==USERTYPE['Customers'] : return jsonify({"Message":"You are not authorized to open this page"}) 
+def get_all_Customers(loggedInUser):
+    if loggedInUser.user_type==USERTYPE['Customers'] : return jsonify({"Message":"You are not authorized to open this page"}) 
     all_Customers = Users.query.filter_by(user_type=USERTYPE['Customers'])
     response  = {}
     for i in all_Customers:
@@ -249,14 +254,14 @@ def get_all_Customers(current_user):
 
 @app.route("/get_loans_State_filter", methods=["GET"])
 @token_required
-def all_loans(current_user):
+def all_loans(loggedInUser):
     
     status = request.args.get('status', 'all')
-    if current_user.user_type==USERTYPE['Customers'] :
+    if loggedInUser.user_type==USERTYPE['Customers'] :
         if(status == 'all') :
-            Loans = Loan.query.all(customer_id=current_user.id)
+            Loans = Loan.query.filter_by(customer_id=loggedInUser.id)
         else :
-            Loans = Loan.query.filter_by(state=LOAN_STATUS[status],customer_id=current_user.id)
+            Loans = Loan.query.filter_by(state=LOAN_STATUS[status],customer_id=loggedInUser.id)
     elif(status == 'all') :
         Loans = Loan.query.all()
     else :
@@ -285,9 +290,9 @@ def all_loans(current_user):
 
 @app.route("/request_loan/<loan_id>", methods=["GET"])
 @token_required
-def make_request_agent(current_user,loan_id):
-    Loan = Loan.query.filter_by(id=loan_id).first()
-    Loan.agent_id = current_user.id
+def make_request_agent(loggedInUser,loan_id):
+    Loans = Loan.query.filter_by(id=loan_id).first()
+    Loans.agent_id = loggedInUser.id
     db.session.commit()
     return jsonify({"Message":"Request to Admin on behalf of this customer is successfully made by you."})
 
@@ -297,11 +302,11 @@ def make_request_agent(current_user,loan_id):
 
 @app.route("/loan_Requests_by_agent", methods=["GET"])
 @token_required
-def get_requests(current_user):
-    if(current_user.user_type == USERTYPE['Agent']):
-        Loan = Loan.query.filter_by(agent_id=current_user.id)
+def get_requests(loggedInUser):
+    if(loggedInUser.user_type == USERTYPE['Agent']):
+        Loans = Loan.query.filter_by(agent_id=loggedInUser.id)
         response  = {}
-        for i in Loan:
+        for i in Loans:
             response[i.id] = {
                 "Loan Amount" : i.loan_amount,
                 "Loan Type" : get_key(i.loan_type,LOAN_TYPES),
@@ -341,17 +346,52 @@ def register_Customer():
 
 
 
+@app.route("/edit_loan/<loan_id>", methods=["POST"])
+@token_required
+def edit_loan(loggedInUser,loan_id):
+    data = request.get_json()
+    Loans = Loan.query.filter_by(id=loan_id).first()
+    if(loggedInUser.id != Loans.customer_id):
+        return jsonify({"Message":"The Loan can only be modified by the particular customer who applied it."}),401
+    if(LOAN_STATUS[Loans.state]=="Approved"):
+        return jsonify({"Message":"This Loan has already been approved by the admin!! It is not mutable now"}),401
+    previous_loan =  Loan_update_history(Loans.loan_amount,Loans.duration,Loans.id,state=Loans.state,loan_type=Loans.loan_type)
+    db.session.add(previous_loan)
+    db.session.commit()
+    if(data == None) : 
+        return jsonify({'message' : 'loan appllication data should be passed for loan'}), 401
+
+    Loans.loan_amount = data["loan_amount"]
+    Loans.loan_amount = data["duration"]
+    Loans.loan_type = LOAN_TYPES[data["loan_type"]]
+    Loans.last_updated_by = loggedInUser.id
+    Loans.update_timestamp = datetime.datetime.now(datetime.timezone.utc)
+    db.session.commit()
+
+    return jsonify({'Message' : 'Your Loan Application has been successfully Modified',"data":
+       {
+            "Loan amount":Loans.loan_amount,
+            "Duration":Loans.duration,
+            "Rate of Interest":Loans.roi,
+            "EMI":Loans.emi,
+            "Total amount to be paid":Loans.total_payable_amount,
+            "Loan Type" : get_key(Loans.loan_type,LOAN_TYPES),
+            "Created on ": Loans.create_timestamp
+       }
+    })
+
+
 
 @app.route("/new_loan", methods=["POST"])
 @token_required
-def new_loan(current_user):
+def new_loan(loggedInUser):
 
     data = request.get_json()
 
     if(data == None) : 
         return jsonify({'message' : 'Data should be passed for loan'}), 401
 
-    new_loan =  Loan(data["loan_amount"],data["duration"],current_user.id,loan_type=LOAN_TYPES[data['loan_type']])
+    new_loan =  Loan(data["loan_amount"],data["duration"],loggedInUser.id,loan_type=LOAN_TYPES[data['loan_type']])
     db.session.add(new_loan)
     db.session.commit()
 
