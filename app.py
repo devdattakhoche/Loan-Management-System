@@ -1,6 +1,5 @@
 from functools import wraps
 from werkzeug.security import check_password_hash
-import traceback
 import datetime
 from flask import Flask, request , jsonify, wrappers
 from flask.helpers import make_response
