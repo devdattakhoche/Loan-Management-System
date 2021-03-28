@@ -4,17 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
-psycopg2 = "*"
-flask-sqlalchemy = "*"
-flask-migrate = "*"
 flask-script = "*"
-psycopg2-binary = "*"
-flask-bcrypt = "*"
+flask-migrate = "*"
+pip = "*"
+install = "*"
 pyjwt = "*"
-pytz = "*"
-requests = "*"
 termcolor = "*"
+psycopg2 = "*"
 
 [dev-packages]
 

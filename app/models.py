@@ -1,10 +1,7 @@
-from pytz import timezone
 from werkzeug.security import generate_password_hash
 import datetime
 import uuid
-from flask import app
-from app import  db , bcrypt
-from flask_sqlalchemy import SQLAlchemy 
+from app import  db 
 
 USERTYPE = {
 

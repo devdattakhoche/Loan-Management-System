@@ -1,11 +1,8 @@
 from termcolor import colored
-from os import access
 from requests.auth import _basic_auth_str
 from app import app
 import unittest
-import json
 import requests
-import base64
 app.testing = True
 
 class PopulateTests(unittest.TestCase):

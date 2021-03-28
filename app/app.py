@@ -1,11 +1,11 @@
+
 from functools import wraps
 from werkzeug.security import check_password_hash
 import datetime
-from flask import Flask, request , jsonify, wrappers
+from flask import Flask, request , jsonify
 from flask.helpers import make_response
 from flask_sqlalchemy import SQLAlchemy
 import jwt
-from flask_bcrypt import Bcrypt
 import os
 
 app = Flask(__name__)
@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
+
 
 from models import LOAN_STATUS, LOAN_TYPES, Loan, Loan_update_history, USERTYPE, Users
 
@@ -34,6 +34,7 @@ def get_key(val,dict):
             if val == value:
                 return key
 
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -45,7 +46,6 @@ def token_required(f):
         if not token:
             return jsonify({'message' : 'Token is missing!'}), 401
 
-        
         try: 
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
             loggedInUser = Users.query.filter_by(public_id=data['public_id']).first()
@@ -88,6 +88,8 @@ Admin Routes
 
 '''
 
+
+
 @app.route("/all_users", methods=["GET"])
 @token_required
 def get_all_user(loggedInUser):
@@ -108,6 +110,7 @@ def get_all_user(loggedInUser):
         })
     if len(response['Users']) == 0 : return jsonify({"Message":"No Users in the system!"})
     return jsonify(response)
+
 
 
 @app.route("/all_agents", methods=["GET"])
@@ -132,6 +135,7 @@ def get_all_agents(loggedInUser):
     return jsonify(response)
 
 
+
 @app.route("/all_Agent_applications", methods=["GET"])
 @token_required
 def get_agents_requests(loggedInUser):
@@ -152,6 +156,7 @@ def get_agents_requests(loggedInUser):
         })  
     if len(response["Unapproved_agents"]) == 0 : return jsonify({"Message":"No pending agent applications  in the system!"})
     return jsonify(response)
+
 
 
 
@@ -182,6 +187,7 @@ def approve_agent_loan(loggedInUser,agent_id):
     
 
 
+
 @app.route("/approve_agent/<agent_id>", methods=["GET"])
 @token_required
 def approve_agent(loggedInUser,agent_id):
@@ -192,6 +198,8 @@ def approve_agent(loggedInUser,agent_id):
     agent.approved = True
     db.session.commit()
     return jsonify({"Message":"The agent has been successfully approved!!"})
+
+
 
 @app.route("/approve_loan/<loan_id>", methods=["GET"])
 @token_required
@@ -207,6 +215,8 @@ def approve_loan(loggedInUser,loan_id):
     return jsonify({"Message":"The Loan has been successfully approved!!"})
 
 
+
+
 @app.route("/reject_loan/<loan_id>", methods=["GET"])
 @token_required
 def reject_loan(loggedInUser,loan_id):
@@ -216,6 +226,8 @@ def reject_loan(loggedInUser,loan_id):
     loan.state = LOAN_STATUS['Rejected']
     db.session.commit()
     return jsonify({"Message":"The Loan has been successfully Rejected!!"})
+
+
 
 
 
@@ -246,6 +258,8 @@ def filter_by_Creationdate(loggedInUser):
     if(len(response['Loans between '+start+' and '+end])==0 ) :  return jsonify({"Message":"No records found for the give range!"})
     return jsonify(response)
 
+
+
 @app.route("/filter-by-update-date", methods=["GET"])
 @token_required
 def filter_by_Modificationdate(loggedInUser):
@@ -273,6 +287,8 @@ def filter_by_Modificationdate(loggedInUser):
     if(len(response['Loans between '+start+' and '+end])==0 ) :  return jsonify({"Message":"No records found for the give range!"})
     return jsonify(response)
 
+
+
 '''
 Agent routes
 
@@ -290,6 +306,8 @@ def register_Agent():
     db.session.commit()
 
     return jsonify({'Message' : 'Your request has been sent successfully! You will be able to login after Admin approves your request!'})
+
+
 
 
 @app.route("/all_Customers", methods=["GET"])
@@ -310,6 +328,8 @@ def get_all_Customers(loggedInUser):
         })
     if len(response["Customers"]) == 0 : return jsonify({"Message":"No Customers in the system!"})
     return jsonify(response)
+
+
 
 
 @app.route("/getloans", methods=["GET"])
@@ -357,6 +377,8 @@ def all_loans(loggedInUser):
     return jsonify(response)
     
 
+
+
 @app.route("/request_loan/<loan_id>", methods=["GET"])
 @token_required
 def make_request_agent(loggedInUser,loan_id):
@@ -370,6 +392,8 @@ def make_request_agent(loggedInUser,loan_id):
         return jsonify({"Message":"Request to Admin on behalf of this customer is successfully made by you."})
     else :
         return jsonify({"Message":"Unauthorised Access"}),401
+
+
 
 
 
@@ -403,9 +427,13 @@ def get_requests(loggedInUser):
 
 
 
+
+
 '''
 Customer Routes
 '''
+
+
 
 
 @app.route("/register_Customer", methods=["POST"])
@@ -416,6 +444,8 @@ def register_Customer():
     db.session.add(new_user)
     db.session.commit()
     return jsonify({'Message' : 'Your Account has been added successfully !'})
+
+
 
 
 
@@ -472,6 +502,8 @@ def edit_loan(loggedInUser,loan_id):
     })
 
 
+
+
 @app.route("/view_loan_history/<loan_id>", methods=["GET"])
 @token_required
 def loan_history(loggedInUser,loan_id):
@@ -492,6 +524,8 @@ def loan_history(loggedInUser,loan_id):
        })
     if(len(response['History'])==0) : return jsonify({"Message":"No changes have been done on this loan object!"})
     return jsonify(response)
+
+
 
 
 

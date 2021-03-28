@@ -1,13 +1,9 @@
 
 from os import access
 from requests.auth import _basic_auth_str
-from termcolor import colored
-# from app import app    
+from termcolor import colored    
 import unittest
-import json
 import requests
-import base64
-# app.app.testing = True
 
 class SecurityTests(unittest.TestCase):
     API_URL = "http://127.0.0.1:5000/"
