@@ -20,9 +20,9 @@ There are three types of tests :  <br />
 <strong>NOTE :Setup tests can only be run once , as the dummy data can't be inserted again due to primary key restrictions</strong>
 
 ```
-$ docker-compose exec app python app/tests_setup.py
-$ docker-compose exec app python app/tests_security.py
-$ docker-compose exec app python app/tests_api.py
+$ docker-compose exec app python project/tests/tests_setup.py -----> Run at the first (only one time)
+$ docker-compose exec app python project/tests/tests_security.py
+$ docker-compose exec app python project/tests/tests_api.py
 ```
 
 
