@@ -24,7 +24,12 @@ $ docker-compose exec app python project/tests/tests_setup.py -----> Run at the 
 $ docker-compose exec app python project/tests/tests_security.py
 $ docker-compose exec app python project/tests/tests_api.py
 ```
+```
+To test again from start and empty the database :-
 
+$ docker-compose exec app python manage.py recreate_db
+
+```
 
 ### Tech related Details
 
