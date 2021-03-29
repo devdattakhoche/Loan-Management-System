@@ -45,8 +45,9 @@ $ docker-compose exec app python app/tests_api.py
 
 ### Workflow
 * There are three roles in the system :- admin ,Customer ,agent
-* Customer can sign up into the system the username and password which will return a token which is valid for a hour.
-* If the validity of the token finished the customer needs to login again to get a valid token
+* Customer can register into the system 
+* All three user have to login before performing any action with username and password which will return token of validity 1 hour.
+* If the validity of the token finished the users needs to login again to get a valid token
 * Agent can also register ,which send a request to the admin .
 * Admin can approve agents into the system post which they can also login into the system
 * Customer has the authority to:
