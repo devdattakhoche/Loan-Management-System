@@ -1,0 +1,40 @@
+
+version: "3.7"
+services:
+  db:
+    env_file:
+    - .env
+    container_name: db
+    restart: always
+    image: postgres:10
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - flask-app-db:/var/lib/postgresql/data
+    ports:
+      - "5401:5432"
+  app:
+    container_name: loan
+    env_file:
+    - .env
+    restart: always
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      - FLASK_ENV=docker
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    # entrypoint:
+    #   - /app/app/docker_script.sh
+      # - python manage.py runserver
+
+volumes:
+  flask-app-db:
+    name: flask-app-db
