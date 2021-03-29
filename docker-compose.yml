@@ -2,7 +2,7 @@ version: "3.7"
 services:
   db:
     env_file:
-    - .env
+      - .env
     container_name: db
     restart: always
     image: postgres:10
@@ -17,7 +17,7 @@ services:
   app:
     container_name: loan
     env_file:
-    - .env
+      - .env
     restart: always
     build:
       context: .
