@@ -36,7 +36,9 @@ $ docker-compose exec app python app/tests_api.py
   * postgres
   * SQLAlchemy
 
+
 * Authentication for the API endpoint is done using JWT.
+* Evey api request will be authoured with the provided JWT.
 * The passwords are hashed using pbkdf2:sha256 and with a salt of lenght 8.
 * Timezone issue is handled by putting UTC timestamp in the databset
 
@@ -79,4 +81,171 @@ $ docker-compose exec app python app/tests_api.py
   * View all Customers in the system
 
 
+## Endpoints
+### Customer 
 
+POST Methods :
+```
+/register_Customer
+
+data = {
+"username" : "yourusername",
+"password" : "yourpassword",
+"email" : "email",
+}
+
+```
+```
+/login
+Basic Auth header
+username and password required
+```
+```
+/new_loan
+
+data = {
+"loan_amount" : 10000,
+"loan_type" : "Home_loan",
+"duration" : 10
+}
+```
+GET Methods :
+```
+/getloans
+params = {"status" : "Approved" or "Rejected" or "New"} (leave blank to see all loans)
+```
+### Agent
+
+POST Methods : 
+```
+/register_Agent
+
+data = {
+"username" : "yourusername",
+"password" : "yourpassword",
+"email" : "email",
+}
+```
+
+```
+/login
+Basic Auth header
+username and password required
+```
+```
+/edit_loan/<loan_id>
+
+data = {
+"loan_amount" : 2000
+....
+}
+```
+
+GET Methods:
+```
+/all_Customers
+```
+
+```
+/getloans
+params = {"status" : "Approved" or "Rejected" or "New"} (leave blank to see all loans)
+```
+
+```
+Request loan tp admin on behalf of customers
+/request_loan/<loan_id>
+```
+```
+All the requests made by that agent (loan requests on behalf of customer)
+/loan_Requests_by_agent
+```
+```
+View edit history of particular loan
+/view_loan_history/<loan_id>
+```
+```
+/filter-by-update-date
+params = {
+"start_date" : "1985-01-17",
+"end_date" : "2025-09-17"
+}
+```
+
+
+```
+/filter-by-create-date
+params = {
+"start_date" : "1985-01-17",
+"end_date" : "2025-09-17"
+}
+```
+
+### Admin
+
+POST Methods
+
+```
+/login
+Basic Auth header
+username and password required
+```
+
+GET Methods
+
+
+```
+/all_Users
+```
+```
+/all_Customers
+```
+```
+/all_Agents
+```
+```
+Returns agents which have registered but aren't approved by admin to enter the system
+/all_Agent_applications
+```
+```
+Approve agent to allow him to enter the system
+/approve_agent/<agent_id>
+```
+
+```
+Returns all the loan requests made by the particular agent
+/Agent_loan_requests/<agent_id>
+```
+```
+Approve loan
+/approve_loan/<loan_id>
+```
+```
+Reject loan
+/reject_loan/<loan_id>
+```
+```
+View edit history of particular loan
+/view_loan_history/<loan_id>
+```
+
+```
+/filter-by-update-date
+params = {
+"start_date" : "1985-01-17",
+"end_date" : "2025-09-17"
+}
+```
+
+```
+/getloans
+params = {"status" : "Approved" or "Rejected" or "New"} (leave blank to see all loans)
+```
+
+
+```
+/filter-by-create-date
+params = {
+"start_date" : "1985-01-17",
+"end_date" : "2025-09-17"
+}
+```
