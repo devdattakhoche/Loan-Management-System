@@ -1,4 +1,4 @@
-
+# from app import config
 from functools import wraps
 from werkzeug.security import check_password_hash
 import datetime
@@ -10,12 +10,22 @@ import os
 
 app = Flask(__name__)
 
-app.config.from_object(os.environ['APP_SETTINGS'])
+
+class Config(object):
+    DEBUG = True
+    TESTING = False
+    CSRF_ENABLED = True
+    SECRET_KEY = 'this-really-needs-to-be-changed'
+    SQLALCHEMY_DATABASE_URI = "postgresql://devdattakhoche:15412342@db/loan_management"
+
+app.config.from_object(Config)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
 from models import LOAN_STATUS, LOAN_TYPES, Loan, Loan_update_history, USERTYPE, Users
+
+
 
 
 add_admin = True
