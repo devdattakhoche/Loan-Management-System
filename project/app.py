@@ -1,6 +1,4 @@
-import project.routes
-from project.models import Users
-from project.constants import USERTYPE
+
 from functools import wraps
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -13,6 +11,8 @@ app.config.from_object(Config)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+from project.models import Users
+from project.constants import USERTYPE
 
 def get_key(val, dict):
     for key, value in dict.items():
